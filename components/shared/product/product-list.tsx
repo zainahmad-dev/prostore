@@ -1,4 +1,4 @@
-import ProductCard from "@/components/shared/product/product-card";
+import ProductCard from './product-card';
 import { Product } from "@/types";
 
 const ProductList = ({
