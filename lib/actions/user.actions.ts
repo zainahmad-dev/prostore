@@ -1,4 +1,4 @@
-'use Server'
+'use server'
 
 import { signInFormSchema } from "../validator";
 import { signIn, signOut } from "@/auth";
