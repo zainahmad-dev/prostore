@@ -48,7 +48,7 @@ export async function addItemToCart(data: CartItem){
 if (!cart) {
       // Create new cart object
       const newCart = insertCartSchema.parse({
-        userId: userId,
+       userId: userId,
         items: [item],
         sessionCartId: sessionCartId,
         ...calcPrice([item]),
