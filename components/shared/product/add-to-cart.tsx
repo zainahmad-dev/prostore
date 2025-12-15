@@ -1,12 +1,14 @@
 "use client";
 
-import { CartItem } from "@/types";
-import { addItemToCart } from "@/lib/actions/cart.actions";
+import { CartItem, Cart } from "@/types";
+import { addItemToCart, removeItemFromCart} from "@/lib/actions/cart.actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Minus, Loader } from "lucide-react";
+import { useTransition } from "react";
 
-const AddToCart = ({ item }: { item: CartItem }) => {
+
+const AddToCart = ({ cart, item }: {cart?: Cart, item: CartItem }) => {
   const router = useRouter();
 
   const handleAddToCart = async () => {
@@ -24,6 +26,8 @@ const AddToCart = ({ item }: { item: CartItem }) => {
       },
     });
   };
+// check if item exit in cart
+
 
   return (
     <button
