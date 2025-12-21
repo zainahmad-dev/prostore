@@ -38,3 +38,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
  npx prisma generate
  npx prisma db seed
  npx prisma studio
+ npx prisma studio --url "postgresql://neondb_owner:npg_2ZXdvsW1tTBj@ep-broad-rice-aeo57rx3-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require"

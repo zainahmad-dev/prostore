@@ -6,7 +6,10 @@ import ws from 'ws';
 // Sets up WebSocket connections, which enables Neon to use WebSocket communication.
 neonConfig.webSocketConstructor = ws;
 
-const connectionString = `${process.env.DATABASE_URL}`;
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString || connectionString.trim() === '') {
+  throw new Error('Environment variable DATABASE_URL is not set. Please set it and re-run the seed (e.g. create a .env or set it in your shell).');
+}
 if (process.env.NODE_ENV === 'development') {
   console.debug('connectionString: [REDACTED]');
 }
