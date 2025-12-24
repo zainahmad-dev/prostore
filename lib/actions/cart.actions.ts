@@ -1,5 +1,6 @@
 'use server';
 
+import { randomUUID } from 'crypto';
 import { CartItem } from "@/types";
 import { cookies } from "next/headers";
 import { convertToPlainObject,formatError, round2 } from "../utils"
@@ -26,17 +27,27 @@ const calcPrice = (items: CartItem[]) => {
 
 
 export async function addItemToCart(data: CartItem){
-  //check for cart cookie
-  
+  //check for cart cookie (generate if missing)
   try {
-    const sessionCartId = (await cookies()).get('sessionCartId')?.value;
-  if(!sessionCartId)throw new Error("CartSession not found");
-  //Get Session and UserId
-  const session = await auth();
-  const userId = session?.user?.id ? (session.user.id as string) : undefined;
+    const cookiesObject = await cookies();
+    let sessionCartId = cookiesObject.get('sessionCartId')?.value;
 
-  //Get Cart
-  const cart = await getMyCart();
+    //Get Session and UserId
+    const session = await auth();
+    const userId = session?.user?.id ? (session.user.id as string) : undefined;
+
+    // If there's no sessionCartId and no logged in user, return an error
+    if (!sessionCartId && !userId) {
+      return { success: false, message: 'Cart session not found' };
+    }
+
+    // If user is logged in but cookie is missing, generate an internal sessionCartId for DB (no cookie set)
+    if (!sessionCartId && userId) {
+      sessionCartId = randomUUID();
+    }
+
+    //Get Cart
+    const cart = await getMyCart();
 
   //Praise and validate item data
   const item = cartItemSchema.parse(data);
@@ -121,13 +132,15 @@ else{
 
 export async function getMyCart(){
  
- //check for cart cookie
-  const sessionCartId = (await cookies()).get('sessionCartId')?.value;
-   if(!sessionCartId)throw new Error("CartSession not found");
-
   //Get Session and UserId
   const session = await auth();
   const userId = session?.user?.id ? (session.user.id as string) : undefined;
+
+  //check for cart cookie
+  const sessionCartId = (await cookies()).get('sessionCartId')?.value;
+
+  // If we have neither user nor session cart id, return undefined (no cart)
+  if (!userId && !sessionCartId) return undefined;
 
    // Get user cart from database
   const cart = await prisma.cart.findFirst({
@@ -148,10 +161,6 @@ export async function getMyCart(){
 }
 export async function removeItemFromCart(productId: string) {
   try {
-    // Check for cart cookie
-    const sessionCartId = (await cookies()).get('sessionCartId')?.value;
-    if (!sessionCartId) throw new Error('Cart session not found');
-
     // Get Product
     const product = await prisma.product.findFirst({
       where: { id: productId },
