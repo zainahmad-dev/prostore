@@ -6,12 +6,13 @@ import { compareSync } from 'bcrypt-ts-edge';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET!,
   pages: {
     signIn: '/sign-in',
     error: '/sign-in',
   },
   session: {
-    strategy: 'jwt' as const,
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   adapter: PrismaAdapter(prisma),
