@@ -1,10 +1,26 @@
-const OrderPage = () => {
-    return (  <>
+import { Metadata } from "next";
+import { getOrderById } from "@/lib/actions/order.action";
+import { notFound } from "next/navigation";
+import { ShippingAddress } from "@/types";
 
-    order page
-    order page
-    order page3
-    </>);
-}
+export const metadata: Metadata = {
+    title: "Order Detail",
+    
+};
+const OrderDetailPage = async (props: {
+    params: Promise<{ id: string }>;
+}) => {
+    const { id } = await props.params;
+    const  order = await getOrderById(id);
+    if (!order) {
+        notFound();
+    }
+
+    return (
+        <>
+          Details  {order.totalPrice}
+        </>
+    );
+};
  
-export default OrderPage;
+export default OrderDetailPage;
