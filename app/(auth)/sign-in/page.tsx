@@ -7,7 +7,7 @@ import CredentialSignInForm from "./credentials-signin-form";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 export const metadata: Metadata = {
-    title: 'Sign In ',
+    title: 'Sign In',
 }
 
 const SignInPage = async (props: {
