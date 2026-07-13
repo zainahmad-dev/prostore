@@ -13,6 +13,7 @@ import { PAGE_SIZE } from "../constants";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from 'next/navigation';
+import { requireAdmin } from "@/lib/auth-guard";
 // Create Order and order items
 
 export async function createOrder() {
@@ -207,6 +208,8 @@ export async function getAllOrders({
   page: number;
   query: string;
 }) {
+  await requireAdmin();
+
   const queryFilter: Prisma.OrderWhereInput =
     query && query !== 'all'
       ? {
@@ -238,6 +241,7 @@ export async function getAllOrders({
 }
 // Delete an order
 export async function deleteOrder(id: string) {
+  await requireAdmin();
   try {
     await prisma.order.delete({ where: { id } });
 
@@ -253,6 +257,7 @@ export async function deleteOrder(id: string) {
 }
 // Update COD order to paid
 export async function updateOrderToPaidCOD(orderId: string) {
+  await requireAdmin();
   try {
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order) throw new Error('Order not found');
@@ -272,6 +277,7 @@ export async function updateOrderToPaidCOD(orderId: string) {
 
 // Update COD order to delivered
 export async function deliverOrder(orderId: string) {
+  await requireAdmin();
   try {
     const order = await prisma.order.findFirst({
       where: {
