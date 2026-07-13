@@ -1,13 +1,14 @@
 import { Metadata } from "next";
 import { getOrderById } from "@/lib/actions/order.action";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { auth } from "@/auth";
 import OrderDetailTable from "./order-details-table";
 import { ShippingAddress, Order } from "@/types";
 
 
 export const metadata: Metadata = {
     title: "Order Detail",
-    
+
 };
 const OrderDetailPage = async (props: {
     params: Promise<{ id: string }>;
@@ -17,7 +18,14 @@ const OrderDetailPage = async (props: {
     if (!order) {
         notFound();
     }
-    
+
+    const session = await auth();
+    if (!session) redirect('/sign-in');
+
+    const isAdmin = session.user?.role === 'admin';
+    if (!isAdmin && order.userId !== session.user?.id) {
+        notFound();
+    }
 
     return <OrderDetailTable order={{
         ...order,
