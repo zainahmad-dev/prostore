@@ -1,3 +1,4 @@
+import { Metadata } from 'next';
 import Link from 'next/link';
 import { deleteProduct, getAllProducts, } from '@/lib/actions/product.actions';
 import { formatCurrency, formatId } from '@/lib/utils';
@@ -6,6 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import Pagination from '@/components/shared/pagination';
 import DeleteDialog from '@/components/shared/delete-dialog';
 import { requireAdmin } from '@/lib/auth-guard';
+
+export const metadata: Metadata = {
+  title: 'Admin Products',
+};
 
 const AdminProductsPage = async (props: {
       searchParams: Promise<{

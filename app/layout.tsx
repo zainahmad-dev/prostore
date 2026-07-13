@@ -7,13 +7,12 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets : ["latin"]});
 
 export const metadata: Metadata = {
-  title: 
-  {template: `%S | Prostore`,
+  title: {
+    template: `%s | ${APP_NAME}`,
     default: APP_NAME,
   },
-
   description: APP_DESCRIPTION,
-  metadataBase: new URL(SERVER_URL)
+  metadataBase: new URL(SERVER_URL),
 };
 
 export default function RootLayout({
