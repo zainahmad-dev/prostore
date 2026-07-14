@@ -5,6 +5,7 @@ import {
   signInFormSchema,
   signUpFormSchema,
   paymentMethodSchema,
+  updateUserRoleSchema,
 } from "../validator";
 import { auth, signIn, signOut } from "@/auth";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
@@ -12,6 +13,10 @@ import { hashSync } from "bcrypt-ts-edge";
 import { prisma } from "@/db/prisma";
 import { formatError } from "../utils";
 import { ShippingAddress } from "@/types";
+import { PAGE_SIZE } from "../constants";
+import { requireAdmin } from "@/lib/auth-guard";
+import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import z from "zod";
 
 // Sign in rhe user with credentials
@@ -160,6 +165,90 @@ export async function updateProfile(user: { name: string; email: string }) {
     return {
       success: true,
       message: 'User updated successfully',
+    };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
+  }
+}
+
+// Get all users (admin)
+export async function getAllUsers({
+  limit = PAGE_SIZE,
+  page,
+  query,
+}: {
+  limit?: number;
+  page: number;
+  query?: string;
+}) {
+  await requireAdmin();
+
+  const queryFilter: Prisma.UserWhereInput =
+    query && query !== 'all'
+      ? {
+          name: {
+            contains: query,
+            mode: 'insensitive',
+          } as Prisma.StringFilter,
+        }
+      : {};
+
+  const data = await prisma.user.findMany({
+    where: { ...queryFilter },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    skip: (page - 1) * limit,
+  });
+
+  const dataCount = await prisma.user.count({ where: { ...queryFilter } });
+
+  return {
+    data,
+    totalPages: Math.ceil(dataCount / limit),
+  };
+}
+
+// Delete a user (admin)
+export async function deleteUser(id: string) {
+  const session = await requireAdmin();
+  try {
+    if (session?.user?.id === id) {
+      return { success: false, message: 'You cannot delete your own account' };
+    }
+
+    await prisma.user.delete({ where: { id } });
+
+    revalidatePath('/admin/users');
+
+    return {
+      success: true,
+      message: 'User deleted successfully',
+    };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
+  }
+}
+
+// Update a user's role (admin)
+export async function updateUserRole(userId: string, role: string) {
+  const session = await requireAdmin();
+  try {
+    if (session?.user?.id === userId) {
+      return { success: false, message: 'You cannot change your own role' };
+    }
+
+    const data = updateUserRoleSchema.parse({ userId, role });
+
+    await prisma.user.update({
+      where: { id: data.userId },
+      data: { role: data.role },
+    });
+
+    revalidatePath('/admin/users');
+
+    return {
+      success: true,
+      message: 'User role updated successfully',
     };
   } catch (error) {
     return { success: false, message: formatError(error) };

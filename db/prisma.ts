@@ -19,7 +19,7 @@ const adapter = new PrismaNeon({ connectionString });
 
 // Extends the PrismaClient with a custom result transformer to convert
 // the price and rating fields to strings.
-export const prisma = new PrismaClient({ adapter }).$extends({
+const createPrismaClient = () => new PrismaClient({ adapter }).$extends({
   result: {
     product: {
       price: {
@@ -96,3 +96,15 @@ export const prisma = new PrismaClient({ adapter }).$extends({
     },
   },
 });
+
+// Reuse a single client (and its underlying Neon websocket connection)
+// across dev-server hot reloads instead of opening a new one per reload.
+const globalForPrisma = globalThis as unknown as {
+  prisma?: ReturnType<typeof createPrismaClient>;
+};
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}

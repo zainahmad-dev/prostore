@@ -1,7 +1,7 @@
 
 import { z} from 'zod';
 import { formatNumberWithDecimal } from './utils';
-import { PAYMENT_METHODS } from './constants';
+import { PAYMENT_METHODS, USER_ROLES } from './constants';
 //import { ta } from 'zod/v4/locales';
 
 const currency = 
@@ -114,4 +114,13 @@ export const insertOrderItemSchema = z.object({
 export const updateProfileSchema = z.object({
   name: z.string().min(3, 'Name must be at leaast 3 characters'),
   email: z.string().min(3, 'Email must be at leaast 3 characters'),
+});
+
+// Schema for updating a user's role (admin management)
+export const updateUserRoleSchema = z.object({
+  userId: z.string().min(1, 'Id is required'),
+  role: z.string(),
+}).refine((data) => USER_ROLES.includes(data.role), {
+  message: 'Invalid role',
+  path: ['role'],
 });
