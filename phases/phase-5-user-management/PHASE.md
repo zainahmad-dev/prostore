@@ -15,21 +15,29 @@ UI, without opening Prisma Studio.
   DB level, so validation of allowed values needs to happen in a Zod schema.
 
 ## Tasks
-- [ ] Add `getAllUsers({ limit, page, query })` (mirror `getAllOrders`'s pagination/
+- [x] Add `getAllUsers({ limit, page, query })` (mirror `getAllOrders`'s pagination/
       search pattern) and `deleteUser(id)` to `lib/actions/user.actions.ts`, both
       guarded by `requireAdmin()`.
-- [ ] Add `updateUserRole(userId, role)` — validate `role` against an allowed list
+- [x] Add `updateUserRole(userId, role)` — validate `role` against an allowed list
       (`user`, `admin`) via Zod before writing.
-- [ ] Build `app/admin/users/page.tsx` (table: name, email, role, actions) and add
-      it to `app/admin/main-nav.tsx`.
-- [ ] Add a role-change control (dropdown or dialog) and a delete-user confirmation
-      (reuse `components/shared/delete-dialog.tsx`, same as products/orders).
-- [ ] Guard against an admin deleting/demoting themselves into a lockout (optional
-      but worth deciding on).
+- [x] Build `app/admin/users/page.tsx` (table: name, email, role, actions) and add
+      it to `app/admin/main-nav.tsx`. (Nav link already existed; wired
+      `components/admin/admin-search.tsx` to route to `/admin/users` too.)
+- [x] Add a role-change control (dropdown or dialog) and a delete-user confirmation
+      (reuse `components/shared/delete-dialog.tsx`, same as products/orders). New
+      `components/admin/update-user-role-dialog.tsx` uses the existing
+      Dialog + RadioGroup pattern from the payment-method form.
+- [x] Guard against an admin deleting/demoting themselves into a lockout — both
+      `deleteUser` and `updateUserRole` reject changes to the caller's own account,
+      and the UI shows "(You)" instead of action buttons on that row.
 
 ## Acceptance criteria
-- `/admin/users` lists all users with pagination, matching the style of
+- [x] `/admin/users` lists all users with pagination, matching the style of
   `/admin/orders`.
-- An admin can change another user's role and it takes effect on that user's next
+- [x] An admin can change another user's role and it takes effect on that user's next
   request (e.g. they can now reach `/admin`).
-- An admin can delete a user.
+- [x] An admin can delete a user.
+
+Verified 2026-07-14: built, type-checked, linted clean, and driven end-to-end in a
+headless browser (sign-in, role change with toast confirmation, delete
+confirmation dialog, self-lockout row) against the real dev database.

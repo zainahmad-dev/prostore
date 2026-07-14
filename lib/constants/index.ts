@@ -32,6 +32,10 @@ export const DEFAULT_PAYMENT_METHOD = process.env.DEFAULT_PAYMENT_METHOD || 'Pay
 
 export const PAGE_SIZE = Number(process.env.PAGE_SIZE) || 2;
 
+export const USER_ROLES = process.env.USER_ROLES
+  ? process.env.USER_ROLES.split(',')
+  : ['admin', 'user'];
+
 export const productDefaultValues = {
   name: '',
   slug: '',
