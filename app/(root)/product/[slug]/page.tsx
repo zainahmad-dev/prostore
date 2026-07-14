@@ -6,7 +6,10 @@ import { notFound } from "next/navigation";
 import ProductPrice from "@/components/shared/product/product-price";
 import ProductImages from "@/components/shared/product/product-images";
 import AddToCart from "@/components/shared/product/add-to-cart";
+import Rating from "@/components/shared/product/rating";
+import ReviewList from "@/components/shared/product/review-list";
 import { getMyCart } from "@/lib/actions/cart.actions";
+import { auth } from "@/auth";
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;
@@ -31,6 +34,7 @@ const ProductDetailPage = async (props: {
     const product = await getProductBySlug(slug);
     if (!product)  notFound();
 const cart = await getMyCart();
+const session = await auth();
   return <>
   <section>
     <div className="grid grid-cols-1 md:grid-cols-5">
@@ -45,7 +49,10 @@ const cart = await getMyCart();
                    {product.brand} {product.category}
                 </p>
                 <h1 className="h3-bold">{product.name}</h1>
-                <p>{product.rating} of {product.numReviews} Reviews </p>
+                <div className="flex items-center gap-2">
+                  <Rating value={Number(product.rating)} />
+                  <p>{product.numReviews} Reviews</p>
+                </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <ProductPrice value={Number(product.price)} 
                     className="w-24 rounded-full bg-green-100 text-green-700 px-5 py-2"
@@ -98,8 +105,14 @@ const cart = await getMyCart();
           </div>
     </div>
   </section>
-  
-     
+  <section className="mt-10">
+    <h2 className="h2-bold mb-5">Customer Reviews</h2>
+    <ReviewList
+      userId={session?.user?.id}
+      productId={product.id}
+      productSlug={product.slug}
+    />
+  </section>
   </>;
 };
 
