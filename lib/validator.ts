@@ -110,11 +110,29 @@ export const insertOrderItemSchema = z.object({
 });
 
 
-// Schema for updating the user profile
+// Schema for updating the user profile. currentPassword is only required when the
+// email is being changed (email is the credential login identifier).
 export const updateProfileSchema = z.object({
-  name: z.string().min(3, 'Name must be at leaast 3 characters'),
-  email: z.string().min(3, 'Email must be at leaast 3 characters'),
+  name: z.string().min(3, 'Name must be at least 3 characters'),
+  email: z.string().email('Invalid email address'),
+  currentPassword: z.string().optional(),
 });
+
+// Schema for changing the account password from the profile page
+export const updatePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(6, 'Password must be at least 6 characters'),
+    newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z
+      .string()
+      .min(6, 'Confirm Password must be at least 6 characters'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
 // Schema for inserting/updating a review
 export const insertReviewSchema = z.object({

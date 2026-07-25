@@ -5,6 +5,7 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -24,10 +25,16 @@ const ProfileForm = () => {
     defaultValues: {
       name: session?.user?.name ?? '',
       email: session?.user?.email ?? '',
+      currentPassword: '',
     },
   });
 
   const { toast } = useToast();
+
+  // The current password field is only needed when the email is being changed.
+  const emailChanged =
+    (form.watch('email') ?? '').toLowerCase() !==
+    (session?.user?.email ?? '').toLowerCase();
 
   const onSubmit = async (values: z.infer<typeof updateProfileSchema>) => {
     const res = await updateProfile(values);
@@ -44,10 +51,12 @@ const ProfileForm = () => {
       user: {
         ...session?.user,
         name: values.name,
+        email: values.email,
       },
     };
 
     await update(newSession);
+    form.reset({ ...values, currentPassword: '' });
 
     toast({
       description: res.message,
@@ -63,26 +72,10 @@ const ProfileForm = () => {
         <div className='flex flex-col gap-5'>
           <FormField
             control={form.control}
-            name='email'
-            render={({ field }) => (
-              <FormItem className='w-full'>
-                <FormControl>
-                  <Input
-                    disabled
-                    placeholder='Email'
-                    className='input-field'
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name='name'
             render={({ field }) => (
               <FormItem className='w-full'>
+                <FormLabel>Name</FormLabel>
                 <FormControl>
                   <Input
                     placeholder='Name'
@@ -94,6 +87,43 @@ const ProfileForm = () => {
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name='email'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder='Email'
+                    className='input-field'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {emailChanged && (
+            <FormField
+              control={form.control}
+              name='currentPassword'
+              render={({ field }) => (
+                <FormItem className='w-full'>
+                  <FormLabel>Current password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='password'
+                      placeholder='Confirm your current password to change email'
+                      className='input-field'
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
         </div>
         <Button
           type='submit'
