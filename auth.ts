@@ -60,6 +60,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       (session.user as unknown as { id?: string }).id = token.sub as string;
       (session.user as unknown as { role?: string }).role = token.role as string;
       (session.user as unknown as { name?: string }).name = token.name as string;
+      if (token.email) {
+        (session.user as unknown as { email?: string }).email =
+          token.email as string;
+      }
 
       // If there is an update, set the user name
       if (trigger === 'update') {
@@ -113,6 +117,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Handle session updates
       if (session?.user.name && trigger === 'update') {
         (token as unknown as Record<string, unknown>).name = session.user.name;
+      }
+      if (session?.user?.email && trigger === 'update') {
+        (token as unknown as Record<string, unknown>).email =
+          session.user.email;
       }
 
       return token;
