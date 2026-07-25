@@ -7,7 +7,11 @@ import { getMyCart } from "./cart.actions";
 import { auth } from "@/auth";
 import { getUserById } from "./user.actions";
 import { prisma } from "@/db/prisma";
-import { CartItem } from "@/types";
+import { CartItem, Order } from "@/types";
+import {
+  sendOrderConfirmationEmail,
+  sendPaymentConfirmationEmail,
+} from "@/lib/email";
 import { insertOrderSchema } from "../validator";
 import { PAGE_SIZE } from "../constants";
 import { Prisma } from "@prisma/client";
@@ -98,6 +102,17 @@ export async function createOrder() {
     });
 
     if (!insertedOrderId) throw new Error('Order not created');
+
+    // Send the buyer an order-confirmation email. Never let an email failure
+    // break order placement.
+    try {
+      const fullOrder = await getOrderById(insertedOrderId);
+      if (fullOrder) {
+        await sendOrderConfirmationEmail(fullOrder as unknown as Order);
+      }
+    } catch (emailError) {
+      console.error('Failed to send order confirmation email', emailError);
+    }
 
     return {
       success: true,
@@ -266,6 +281,16 @@ export async function updateOrderToPaidCOD(orderId: string) {
       where: { id: orderId },
       data: { isPaid: true, paidAt: new Date() },
     });
+
+    // Send the buyer a payment-confirmation email now the order is paid.
+    try {
+      const fullOrder = await getOrderById(orderId);
+      if (fullOrder) {
+        await sendPaymentConfirmationEmail(fullOrder as unknown as Order);
+      }
+    } catch (emailError) {
+      console.error('Failed to send payment confirmation email', emailError);
+    }
 
     revalidatePath(`/order/${orderId}`);
 

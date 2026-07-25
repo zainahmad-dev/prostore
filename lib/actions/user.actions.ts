@@ -6,10 +6,12 @@ import {
   signUpFormSchema,
   paymentMethodSchema,
   updateUserRoleSchema,
+  updateProfileSchema,
+  updatePasswordSchema,
 } from "../validator";
 import { auth, signIn, signOut } from "@/auth";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
-import { hashSync } from "bcrypt-ts-edge";
+import { hashSync, compareSync } from "bcrypt-ts-edge";
 import { prisma } from "@/db/prisma";
 import { formatError } from "../utils";
 import { ShippingAddress } from "@/types";
@@ -140,8 +142,12 @@ export async function updateUserPaymentMethod(
     return { success: false, message: formatError(error) };
   }
 }
-// Update the user profile
-export async function updateProfile(user: { name: string; email: string }) {
+// Update the user profile (name, and optionally email with a password check)
+export async function updateProfile(user: {
+  name: string;
+  email: string;
+  currentPassword?: string;
+}) {
   try {
     const session = await auth();
 
@@ -153,18 +159,84 @@ export async function updateProfile(user: { name: string; email: string }) {
 
     if (!currentUser) throw new Error('User not found');
 
+    const { name, email, currentPassword } = updateProfileSchema.parse(user);
+
+    const emailChanged =
+      email.toLowerCase() !== currentUser.email.toLowerCase();
+
+    if (emailChanged) {
+      // Email is the credential login identifier, so gate the change on the
+      // current password.
+      if (!currentUser.password) {
+        throw new Error('This account cannot change its email');
+      }
+      if (
+        !currentPassword ||
+        !compareSync(currentPassword, currentUser.password)
+      ) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // Make sure the new email isn't already used by another account.
+      const existing = await prisma.user.findFirst({ where: { email } });
+      if (existing && existing.id !== currentUser.id) {
+        throw new Error('Email already exists');
+      }
+    }
+
     await prisma.user.update({
       where: {
         id: currentUser.id,
       },
       data: {
-        name: user.name,
+        name,
+        ...(emailChanged ? { email } : {}),
       },
     });
 
     return {
       success: true,
-      message: 'User updated successfully',
+      message: 'Profile updated successfully',
+    };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
+  }
+}
+
+// Change the signed-in user's password
+export async function updatePassword(data: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  try {
+    const session = await auth();
+
+    const currentUser = await prisma.user.findFirst({
+      where: {
+        id: session?.user?.id,
+      },
+    });
+
+    if (!currentUser) throw new Error('User not found');
+    if (!currentUser.password) {
+      throw new Error('This account has no password set');
+    }
+
+    const { currentPassword, newPassword } = updatePasswordSchema.parse(data);
+
+    if (!compareSync(currentPassword, currentUser.password)) {
+      throw new Error('Current password is incorrect');
+    }
+
+    await prisma.user.update({
+      where: { id: currentUser.id },
+      data: { password: hashSync(newPassword, 10) },
+    });
+
+    return {
+      success: true,
+      message: 'Password updated successfully',
     };
   } catch (error) {
     return { success: false, message: formatError(error) };
