@@ -52,6 +52,33 @@ export async function createOrder() {
         redirectTo: "/payment-method",
       };
     }
+      // Re-check stock at checkout time - the cart may have been sitting around
+      // while other buyers drained the inventory.
+      const cartItems = cart.items as CartItem[];
+      const productsInCart = await prisma.product.findMany({
+        where: { id: { in: cartItems.map((item) => item.productId) } },
+        select: { id: true, name: true, stock: true },
+      });
+
+      for (const item of cartItems) {
+        const product = productsInCart.find((p) => p.id === item.productId);
+
+        if (!product) {
+          return {
+            success: false,
+            message: `${item.name} is no longer available`,
+            redirectTo: '/cart',
+          };
+        }
+        if (product.stock < item.qty) {
+          return {
+            success: false,
+            message: `Not enough stock for ${product.name} (${product.stock} left)`,
+            redirectTo: '/cart',
+          };
+        }
+      }
+
       // Create order object
       const order = insertOrderSchema.parse({
         userId: user.id,
@@ -76,8 +103,8 @@ export async function createOrder() {
           paidAt: isCOD ? new Date() : null,
         },
       });
-      // Create order items from the cart items
-      for (const item of cart.items as CartItem[]) {
+      // Create order items from the cart items and draw down the inventory.
+      for (const item of cartItems) {
         await tx.orderItem.create({
           data: {
             ...item,
@@ -85,6 +112,18 @@ export async function createOrder() {
             orderId: insertedOrder.id,
           },
         });
+
+        // Conditional update: if another order consumed the stock between the
+        // check above and here, this matches no rows and we abort the whole
+        // transaction rather than overselling.
+        const { count } = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.qty } },
+          data: { stock: { decrement: item.qty } },
+        });
+
+        if (count === 0) {
+          throw new Error(`Not enough stock for ${item.name}`);
+        }
       }
       // Clear cart
       await tx.cart.update({
@@ -247,7 +286,9 @@ export async function getAllOrders({
     include: { user: { select: { name: true } } },
   });
 
-  const dataCount = await prisma.order.count();
+  // Count has to use the same filter as the query, otherwise the pagination
+  // reports the page count for *all* orders while a search is active.
+  const dataCount = await prisma.order.count({ where: { ...queryFilter } });
 
   return {
     data,

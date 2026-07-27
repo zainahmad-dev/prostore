@@ -58,17 +58,20 @@ export async function signUpUser(prevState: unknown, formData: FormData) {
       confirmPassword: formData.get("confirmPassword"),
     });
     const plainPassword = user.password;
+    // Store emails lower-cased: the unique index is case-sensitive, so without
+    // this "A@b.com" and "a@b.com" would become two separate accounts.
+    const email = user.email.toLowerCase();
     user.password = hashSync(user.password, 10);
     await prisma.user.create({
       data: {
         name: user.name,
-        email: user.email,
+        email,
         password: user.password,
       },
     });
 
     await signIn("credentials", {
-      email: user.email,
+      email,
       password: plainPassword,
     });
     return { success: true, message: "User Registered successfully" };
@@ -159,10 +162,11 @@ export async function updateProfile(user: {
 
     if (!currentUser) throw new Error('User not found');
 
-    const { name, email, currentPassword } = updateProfileSchema.parse(user);
+    const parsed = updateProfileSchema.parse(user);
+    const { name, currentPassword } = parsed;
+    const email = parsed.email.toLowerCase();
 
-    const emailChanged =
-      email.toLowerCase() !== currentUser.email.toLowerCase();
+    const emailChanged = email !== currentUser.email.toLowerCase();
 
     if (emailChanged) {
       // Email is the credential login identifier, so gate the change on the
