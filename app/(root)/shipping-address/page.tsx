@@ -18,7 +18,9 @@ const shippingAddressPage = async () => {
 
   const userId = session?.user?.id;
 
-  if (!userId) throw new Error('No user ID');
+  // Middleware already gates this route; this is the belt-and-braces path so a
+  // signed-out visitor gets the sign-in page rather than a 500.
+  if (!userId) redirect('/sign-in?callbackUrl=/shipping-address');
 
   const user = await getUserById(userId);
 

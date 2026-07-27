@@ -58,6 +58,10 @@ export async function addItemToCart(data: CartItem){
   })
    if (!product) throw new Error('Product not found');
 if (!cart) {
+      // The "first item into an empty cart" path skipped the stock check
+      // entirely, so an out-of-stock product could still be added.
+      if (product.stock < item.qty) throw new Error('Not enough stock');
+
       // Create new cart object
       const newCart = insertCartSchema.parse({
        userId: userId,
@@ -96,8 +100,8 @@ else{
         )!.qty = existItem.qty + 1;
       } else {
         // If item does not exist in cart
-        // Check stock
-        if (product.stock < 1) throw new Error('Not enough stock');
+        // Check stock against the requested quantity, not just 1
+        if (product.stock < item.qty) throw new Error('Not enough stock');
 
         // Add item to the cart.items
         cart.items.push(item);

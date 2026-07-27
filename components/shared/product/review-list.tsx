@@ -48,7 +48,7 @@ const ReviewList = ({
             href={`/sign-in?callbackUrl=/product/${productSlug}`}
           >
             sign in
-          </Link>
+          </Link>{" "}
           to write a review
         </p>
       )}

@@ -25,10 +25,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (credentials == null) return null;
 
-        // Find user in database
+        // Find user in database. Emails are stored lower-cased, so normalise the
+        // input to keep sign-in case-insensitive.
         const user = await prisma.user.findFirst({
           where: {
-            email: credentials.email as string,
+            email: (credentials.email as string)?.toLowerCase(),
           },
         });
 
@@ -55,19 +56,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async session({ session, user, trigger, token }) {
-      // Set the user ID from the token
+    async session({ session, token }) {
+      // Set the user ID from the token. With the JWT strategy the token is the
+      // only source of truth here - the `user` argument is undefined, so it must
+      // not be read (doing so threw on every profile update).
       (session.user as unknown as { id?: string }).id = token.sub as string;
       (session.user as unknown as { role?: string }).role = token.role as string;
       (session.user as unknown as { name?: string }).name = token.name as string;
       if (token.email) {
         (session.user as unknown as { email?: string }).email =
           token.email as string;
-      }
-
-      // If there is an update, set the user name
-      if (trigger === 'update') {
-        session.user.name = user.name;
       }
 
       return session;

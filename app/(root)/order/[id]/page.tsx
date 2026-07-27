@@ -27,10 +27,13 @@ const OrderDetailPage = async (props: {
         notFound();
     }
 
-    return <OrderDetailTable order={{
-        ...order,
-        shippingAddress: order.shippingAddress as ShippingAddress
-    } as Order}/>
+    return <OrderDetailTable
+        order={{
+            ...order,
+            shippingAddress: order.shippingAddress as ShippingAddress
+        } as Order}
+        isAdmin={isAdmin}
+    />
 
 };
  

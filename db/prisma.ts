@@ -23,17 +23,19 @@ const createPrismaClient = () => new PrismaClient({ adapter }).$extends({
   result: {
     product: {
       price: {
+        needs: { price: true },
         compute(product) {
           return product.price.toString();
         },
       },
       rating: {
+        needs: { rating: true },
         compute(product) {
           return product.rating.toString();
         },
       },
     },
-    
+
     cart: {
       itemsPrice: {
         needs: { itemsPrice: true },
@@ -89,8 +91,9 @@ const createPrismaClient = () => new PrismaClient({ adapter }).$extends({
     },
      orderItem: {
       price: {
-        compute(cart) {
-          return cart.price.toString();
+        needs: { price: true },
+        compute(orderItem) {
+          return orderItem.price.toString();
         },
       },
     },

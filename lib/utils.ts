@@ -21,12 +21,13 @@ export function formatNumberWithDecimal(num: number): string{
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function formatError(error: any) {
   if (error.name === 'ZodError') {
-    // Handle Zod error
-    const fieldErrors = Object.keys(error.issues).map(
-      (field) => error.issues[field].message
+    // `issues` is an array - map over it directly rather than over its keys.
+    const issues = Array.isArray(error.issues) ? error.issues : [];
+    const fieldErrors = issues.map(
+      (issue: { message: string }) => issue.message
     );
 
-    return fieldErrors.join('. ');
+    return fieldErrors.length > 0 ? fieldErrors.join('. ') : 'Invalid input';
   } else if (
     error.name === 'PrismaClientKnownRequestError' &&
     error.code === 'P2002'

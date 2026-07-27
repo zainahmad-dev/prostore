@@ -29,7 +29,9 @@ const PlaceOrderPage = async () => {
   const session = await auth();
   const userId = session?.user?.id;
 
-  if (!userId) throw new Error('User not found');
+  // Middleware already gates this route; this is the belt-and-braces path so a
+  // signed-out visitor gets the sign-in page rather than a 500.
+  if (!userId) redirect('/sign-in?callbackUrl=/place-order');
 
   const user = await getUserById(userId);
 
@@ -89,7 +91,7 @@ const PlaceOrderPage = async () => {
                     <TableRow key={item.slug}>
                       <TableCell>
                         <Link
-                          href={`/product/{item.slug}`}
+                          href={`/product/${item.slug}`}
                           className='flex items-center'
                         >
                           <Image
