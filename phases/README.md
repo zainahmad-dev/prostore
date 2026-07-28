@@ -1,4 +1,4 @@
-# Prostore — Remaining Work, Phased
+# Threadly — Remaining Work, Phased
 
 This tracks what's left to build, based on reading the actual codebase on 2026-07-13
 (not the original course/tutorial plan). Each phase is a self-contained folder with
